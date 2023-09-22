@@ -15,6 +15,6 @@
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx",
     "src/**/*.d.ts"
-  ],
+, "src/firebase.ts", "src/firebase-config.js"  ],
   "types": ["@nx/react/typings/cssmodule.d.ts", "@nx/react/typings/image.d.ts"]
 }
