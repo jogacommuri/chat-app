@@ -1,7 +1,7 @@
 import React, { useState , useContext} from 'react'
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
-import UserContext from './userContext';
+import UserContextProvider, { useUserContext } from './UserContextProvider';
 
 export default function UserRegistrationForm() {
 
@@ -21,12 +21,12 @@ export default function UserRegistrationForm() {
     password: []
   });
   const [isRegistered, setIsRegistered] = useState(false);
-  const user =  useContext(UserContext);
+  const { user, setUser } = useUserContext();
   const navigate = useNavigate();
   
   const inputClass = 'block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-sm border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-slate-600 focus:outline-none focus:ring-0 focus:border-slate-200 peer';
   const labelClass = 'absolute text-sm tracking-wide text-neutral-400 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-slate-600 peer-focus:font-bold peer-focus:dark:text-slate-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-1'
-  const handleChange = (event) =>{
+  const handleChange = (event:any) =>{
     const {name, value} = event.target;
     setFormData({
       ...formData,
@@ -93,7 +93,7 @@ export default function UserRegistrationForm() {
         console.log("resp =>", response);
         console.log({firstName, lastName, email, password});
         const name = `${firstName} ${lastName}`
-        user.setUser({firstName, lastName, email});
+        setUser({firstName, lastName, email,_id:''});
         navigate('/')
       })
 
@@ -103,9 +103,9 @@ export default function UserRegistrationForm() {
     <div className='w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700 '>       
       <div className='p-6 space-y-4 md:space-y-6 sm:p-8'>
         <div>
-          {user.name ? (
+          {user ? (
             <h1 className="text-lg font-mono font-medium text-gray-700 md:text-xl dark:text-white">
-            welcome {user.name}
+            welcome {user.firstName} {user.lastName}
             </h1> 
           ) :  (
           <div>

@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import useInitials from './hooks/useInitials';
-import UserContext from './userContext';
+import UserContextProvider, { useUserContext } from './UserContextProvider';
 
-export default function ChatInterface({ messages, chatRoomName, sendMessage }) {
+export default function ChatInterface({ messages, chatRoomName, sendMessage , userDetails}) {
     const [messageText, setMessageText] = useState('');
-    const user = useContext(UserContext);
-    console.log("USer from interface", user);
+    const user = userDetails.userDetails;
+    const userName = user ? `${user.firstName} ${user.lastName}` : 'Guest';
     const messageContainerRef = useRef(null);
     const messageInputRef = useRef(null);
     const insertTextAtCursor = (textToInsert) => {
@@ -63,6 +63,9 @@ export default function ChatInterface({ messages, chatRoomName, sendMessage }) {
             messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
           }
       }, [messages]);
+      useEffect(() => {
+        console.log('User state updated from ChatInterface:', userDetails);
+      }, [user]);
     return (
         <div className="flex-1 p:2 sm:p-6 flex flex-col font-mono h-screen justify-end">
             <div className="flex flex-col items-center justify-items-start w-full p-4">
@@ -122,7 +125,7 @@ export default function ChatInterface({ messages, chatRoomName, sendMessage }) {
                         <textarea
                             ref={messageInputRef}
                             id="chat"
-                            rows="1"
+                            rows={1}
                             className="w-full focus:outline-none focus:placeholder-gray-400 text-gray-600 placeholder-gray-600 pl-12 bg-gray-200 rounded-md py-3"
                             placeholder="Your message..."
                             value={messageText}
