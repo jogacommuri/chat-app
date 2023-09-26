@@ -2,7 +2,9 @@
   "name": "@my-org/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "start": "node dist/apps/api/main"
+  },
   "private": true,
   "dependencies": {
     "@heroicons/react": "^2.0.18",
