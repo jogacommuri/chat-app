@@ -7,13 +7,15 @@ export interface IMessage extends Document {
   text: string;
   timestamp: Date;
   chatRoomId: IChatRoom; // Reference to the ChatRoom document
+  systemMessage: boolean;
 }
 
 const messageSchema: Schema<IMessage> = new Schema({
   senderInfo: { type: Schema.Types.ObjectId, ref: 'User' }, // Reference to User documents
   text: String,
   timestamp: { type: Date, default: Date.now },
-  chatRoomId: { type: mongoose.Schema.Types.ObjectId, ref: 'ChatRoom' }, // Reference to the ChatRoom document
+  chatRoomId: { type: mongoose.Schema.Types.ObjectId, ref: 'ChatRoom' },
+  systemMessage: { type: Boolean, default: false }
 });
 
 const Message: Model<IMessage> = mongoose.model<IMessage>('Message', messageSchema);

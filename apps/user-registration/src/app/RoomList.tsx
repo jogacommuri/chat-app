@@ -2,33 +2,27 @@ import React from 'react';
 import useInitials from './hooks/useInitials';
 import axios from 'axios';
 
-export default function RoomList({ rooms }) {
+export default function RoomList({ rooms , handleJoinRoom, userInRoom, handleLeaveRoom, activeRooms,setActiveRooms}) {
   
   const roomList = Array.isArray(rooms) ? rooms : [];
-
+console.log("ACTIVE ROOM =>",activeRooms)
     const roomItems = roomList.map((room, index) => {
         const initials = useInitials(room.name);
 
-        const handleJoinRoom = async () => {
-            console.log("Join Clicked")
-            try {
-              // Send a POST request to join the chat room
-              const response = await axios.post(`http://localhost:3333/api/join/${room._id}`, null, {
-                withCredentials: true, // Send cookies with the request if using cookies for authentication
-              });
-      
-              if (response.status === 200) {
-                // Successfully joined the chat room
-                // You can implement the logic to navigate to the chat room or show a success message here
-                console.log('Successfully joined the chat room');
-              } else {
-                // Handle errors here, such as room not found or user already in the room
-                console.error('Failed to join the chat room:', response.data.error);
-              }
-            } catch (error) {
-              console.error('Error joining chat room:', error);
+        const handleClick = () => {
+            if (userInRoom(room._id)) {
+              // User is already in the room, so leave it
+              handleLeaveRoom(room._id);
+              setActiveRooms((prevActiveRooms) => prevActiveRooms.filter((activeRoom) => activeRoom !== room._id));
+            } else {
+              // User is not in the room, so join it
+              handleJoinRoom(room._id);
+              setActiveRooms((prevActiveRooms) => [...prevActiveRooms, room._id]);
             }
           };
+          const buttonAction = userInRoom(room._id) ? 'Leave' : 'Join';
+          const isUserInActiveRoom = activeRooms.length > 0;
+          console.log("isUserInActiveRoom =>", isUserInActiveRoom)
         return (
         <li key={index} className="py-3 sm:py-4">
             <div className="flex items-center space-x-4">
@@ -48,10 +42,13 @@ export default function RoomList({ rooms }) {
             </div>
             <div className="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
                 <button
-                className="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white"
-                onClick={handleJoinRoom}
+                className={`inline-flex items-center text-base font-semibold text-gray-900 dark:text-white ${
+                    activeRooms.length>0 && !activeRooms.includes(room._id) ? 'text-gray-300' : 'text-gray-900'
+                  }`}
+                onClick={handleClick}
+                disabled={activeRooms.length>0 && !activeRooms.includes(room._id)}
                 >
-                    Join
+                    {buttonAction}
                 </button>
             </div>
             </div>

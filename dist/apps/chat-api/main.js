@@ -89,14 +89,14 @@ exports["default"] = User;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const tslib_1 = __webpack_require__(1);
 const mongoose_1 = tslib_1.__importStar(__webpack_require__(6));
-const messageSchema = new mongoose_1.Schema({
-    senderInfo: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
-    text: String,
-    timestamp: { type: Date, default: Date.now },
-    chatRoomId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'ChatRoom' }, // Reference to the ChatRoom document
+const chatRoomSchema = new mongoose_1.Schema({
+    name: String,
+    description: String,
+    messages: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Message' }],
+    users: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }], // Reference to User documents
 });
-const Message = mongoose_1.default.model('Message', messageSchema);
-exports["default"] = Message;
+const ChatRoom = mongoose_1.default.model('ChatRoom', chatRoomSchema);
+exports["default"] = ChatRoom;
 
 
 /***/ }),
@@ -106,11 +106,32 @@ exports["default"] = Message;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const tslib_1 = __webpack_require__(1);
+const mongoose_1 = tslib_1.__importStar(__webpack_require__(6));
+const messageSchema = new mongoose_1.Schema({
+    senderInfo: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
+    text: String,
+    timestamp: { type: Date, default: Date.now },
+    chatRoomId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'ChatRoom' },
+    systemMessage: { type: Boolean, default: false }
+});
+const Message = mongoose_1.default.model('Message', messageSchema);
+exports["default"] = Message;
+
+
+/***/ }),
+/* 14 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const tslib_1 = __webpack_require__(1);
 const express_1 = tslib_1.__importDefault(__webpack_require__(2));
 const mongoose_1 = tslib_1.__importDefault(__webpack_require__(6));
-const ChatRooms_1 = tslib_1.__importDefault(__webpack_require__(14));
-const Message_1 = tslib_1.__importDefault(__webpack_require__(12));
+const ChatRooms_1 = tslib_1.__importDefault(__webpack_require__(12));
+const Message_1 = tslib_1.__importDefault(__webpack_require__(13));
+const User_1 = tslib_1.__importDefault(__webpack_require__(11));
 const jsonwebtoken_1 = tslib_1.__importDefault(__webpack_require__(10));
+const ObjectId = mongoose_1.default.Types.ObjectId;
 const router = express_1.default.Router();
 // Create a new chat room
 router.post('/chatrooms', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
@@ -135,39 +156,6 @@ router.get('/chatrooms', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0,
     }
 }));
 const secret = "SECRET_1234";
-router.post('/join/:roomId', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
-    const roomId = req.params.roomId;
-    const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    try {
-        // Verify the user's token and get user information
-        const userInfo = jsonwebtoken_1.default.verify(token, secret);
-        // Find the chat room by ID
-        const chatRoom = yield ChatRooms_1.default.findById(roomId);
-        if (!chatRoom) {
-            return res.status(404).json({ error: 'Chat room not found' });
-        }
-        // Check if the user is already a participant in the chat room
-        const userId = userInfo.id.toString();
-        const userIsParticipant = chatRoom.users.some((user) => user.toString() === userId);
-        if (userIsParticipant) {
-            return res.status(400).json({ error: 'User is already in the chat room' });
-        }
-        const userIdObject = new mongoose_1.default.Types.ObjectId(userId);
-        // Add the user's ID to the chat room's participants list
-        chatRoom.users.push(userIdObject);
-        // Save the updated chat room
-        yield chatRoom.save();
-        // Optionally, you can send back the updated chat room data to the client
-        res.status(200).json({ message: 'Successfully joined the chat room', chatRoom });
-    }
-    catch (error) {
-        console.error('Error joining chat room:', error);
-        res.status(500).json({ error: 'Failed to join the chat room' });
-    }
-}));
 // Get a specific chat room by ID
 router.get('/chatrooms/:id', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -183,10 +171,66 @@ router.get('/chatrooms/:id', (req, res) => tslib_1.__awaiter(void 0, void 0, voi
     }
 }));
 // Get chat messages for a specific chat room
+// router.get('/chatroom/:roomId/messages', async (req, res) => {
+//   const roomId = req.params.roomId;
+//   try {
+//     // Use MongoDB aggregation to join messages with user names
+//     const messages = await Message.aggregate([
+//       {
+//         $match: { chatRoomId: new mongoose.Types.ObjectId(roomId) }
+//       },
+//       {
+//         $lookup: {
+//           from: 'users', // Assuming your user collection is named 'users'
+//           localField: 'senderInfo',
+//           foreignField: '_id',
+//           as: 'senderInfo'
+//         }
+//       },
+//       {
+//         $unwind: '$senderInfo'
+//       },
+//       {
+//         $project: {
+//           text: 1,
+//           timestamp: 1,
+//           'senderInfo.firstName': 1,
+//           'senderInfo.lastName': 1,
+//           'senderInfo._id':1
+//         }
+//       }
+//     ]);
+//     const chatRoom: IChatRoom | null = await ChatRoom.findById(roomId)
+//     .populate('users') // Populate the 'users' field with user documents
+//     .exec();
+//     if (!chatRoom) {
+//       throw new Error('Chat room not found');
+//     }
+//     const userObjectIds: mongoose.Types.ObjectId[] = chatRoom.users.map(
+//       (user: IUser) => mongoose.Types.ObjectId(user._id)
+//     );
+//     // Optionally, fetch additional attributes for users here
+//     const usersWithAdditionalAttributes: IUser[] = await User.find({
+//       _id: { $in: userObjectIds }
+//     });
+//     chatRoom.users = usersWithAdditionalAttributes;
+//     res.json({
+//       chatRoomName: chatRoom.name,
+//       chatRoomUsers: chatRoom.users,
+//       messages
+//     });
+//   } catch (error) {
+//     console.error('Error fetching chat room messages:', error);
+//     res.status(500).json({ error: 'Failed to fetch chat room messages' });
+//   }
+// });
 router.get('/chatroom/:roomId/messages', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     const roomId = req.params.roomId;
+    if (!ObjectId.isValid(roomId)) {
+        return res.status(400).json({ error: 'Invalid roomId format' });
+    }
     try {
-        // Use MongoDB aggregation to join messages with user names
+        // Use MongoDB aggregation to join messages with user names and additional attributes
         const messages = yield Message_1.default.aggregate([
             {
                 $match: { chatRoomId: new mongoose_1.default.Types.ObjectId(roomId) }
@@ -208,20 +252,115 @@ router.get('/chatroom/:roomId/messages', (req, res) => tslib_1.__awaiter(void 0,
                     timestamp: 1,
                     'senderInfo.firstName': 1,
                     'senderInfo.lastName': 1,
-                    'senderInfo._id': 1
+                    'senderInfo._id': 1,
+                    'systemMessage': 1,
                 }
             }
         ]);
-        // Optionally, you can also fetch the chat room name
-        const chatRoom = yield ChatRooms_1.default.findById(roomId, 'name');
+        // Fetch the chat room and its users
+        const chatRoom = yield ChatRooms_1.default.findById(roomId)
+            .populate('users', '-password') // Populate the 'users' field with user documents
+            .exec();
+        if (!chatRoom) {
+            throw new Error('Chat room not found');
+        }
+        const userObjectIds = [];
+        // Iterate through users and add their IDs to the array
+        chatRoom.users.forEach((userObjectId) => {
+            userObjectIds.push(userObjectId);
+        });
+        // Optionally, fetch additional attributes for users here
+        const usersWithAdditionalAttributes = yield User_1.default.find({
+            _id: { $in: userObjectIds }, // Filter users by their IDs
+        });
         res.json({
             chatRoomName: chatRoom.name,
+            chatRoomUsers: usersWithAdditionalAttributes,
             messages
         });
     }
     catch (error) {
         console.error('Error fetching chat room messages:', error);
         res.status(500).json({ error: 'Failed to fetch chat room messages' });
+    }
+}));
+router.post('/join/:roomId', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+    const roomId = req.params.roomId;
+    const token = req.cookies.token;
+    const { firstName, lastName } = req.body;
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    try {
+        // Verify the user's token and get user information
+        const userInfo = jsonwebtoken_1.default.verify(token, secret);
+        console.log(JSON.stringify(userInfo));
+        // Find the chat room by ID
+        const chatRoom = yield ChatRooms_1.default.findById(roomId);
+        if (!chatRoom) {
+            return res.status(404).json({ error: 'Chat room not found' });
+        }
+        // Check if the user is already a participant in the chat room
+        const userId = userInfo.id.toString();
+        const userIsParticipant = chatRoom.users.some((user) => user.toString() === userId);
+        if (userIsParticipant) {
+            return res.status(400).json({ error: 'User is already in the chat room' });
+        }
+        const userIdObject = new mongoose_1.default.Types.ObjectId(userId);
+        // Add the user's ID to the chat room's participants list
+        chatRoom.users.push(userIdObject);
+        const joinMessage = new Message_1.default({
+            senderInfo: userInfo.id,
+            text: `${firstName} ${lastName} has joined the chat.`,
+            chatRoomId: roomId,
+            systemMessage: true, // Set as a system message
+        });
+        // Save the updated chat room
+        yield Promise.all([chatRoom.save(), joinMessage.save()]);
+        // Optionally, you can send back the updated chat room data to the client
+        res.status(200).json({ message: 'Successfully joined the chat room', chatRoom });
+    }
+    catch (error) {
+        console.error('Error joining chat room:', error);
+        res.status(500).json({ error: 'Failed to join the chat room' });
+    }
+}));
+router.post('/leave/:roomId', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+    const { roomId } = req.params;
+    const token = req.cookies.token;
+    const { firstName, lastName } = req.body;
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    try {
+        // Remove the user from the chat room in the database
+        // For example, if you have a "chatRoom" model, you can use Mongoose to update it
+        // Update the database to remove the user from the room's user list
+        const userInfo = jsonwebtoken_1.default.verify(token, secret);
+        console.log(JSON.stringify(userInfo));
+        const chatRoom = yield ChatRooms_1.default.findById(roomId);
+        if (!chatRoom) {
+            return res.status(404).json({ error: 'Chat room not found' });
+        }
+        // Check if the user is a participant in the chat room
+        const userId = userInfo.id.toString();
+        const userIndex = chatRoom.users.findIndex((user) => user.toString() === userId);
+        if (userIndex === -1) {
+            return res.status(400).json({ error: 'User is not in the chat room' });
+        }
+        chatRoom.users.splice(userIndex, 1);
+        const leaveMessage = new Message_1.default({
+            senderInfo: userInfo.id,
+            text: `${firstName} ${lastName} has left the chat.`,
+            chatRoomId: roomId,
+            systemMessage: true,
+        });
+        yield Promise.all([chatRoom.save(), leaveMessage.save()]);
+        res.status(200).json({ message: 'Successfully left the chat room' });
+    }
+    catch (error) {
+        console.error('Error leaving chat room:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 }));
 // Update a chat room by ID
@@ -254,24 +393,6 @@ router.delete('/chatrooms/:id', (req, res) => tslib_1.__awaiter(void 0, void 0, 
     }
 }));
 exports["default"] = router;
-
-
-/***/ }),
-/* 14 */
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const tslib_1 = __webpack_require__(1);
-const mongoose_1 = tslib_1.__importStar(__webpack_require__(6));
-const chatRoomSchema = new mongoose_1.Schema({
-    name: String,
-    description: String,
-    messages: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Message' }],
-    users: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }], // Reference to User documents
-});
-const ChatRoom = mongoose_1.default.model('ChatRoom', chatRoomSchema);
-exports["default"] = ChatRoom;
 
 
 /***/ })
@@ -323,8 +444,9 @@ const http = tslib_1.__importStar(__webpack_require__(8));
 const socket_io_1 = __webpack_require__(9);
 const jsonwebtoken_1 = tslib_1.__importDefault(__webpack_require__(10));
 const User_1 = tslib_1.__importDefault(__webpack_require__(11));
-const Message_1 = tslib_1.__importDefault(__webpack_require__(12));
-const chatRoomRoute_1 = tslib_1.__importDefault(__webpack_require__(13));
+const ChatRooms_1 = tslib_1.__importDefault(__webpack_require__(12));
+const Message_1 = tslib_1.__importDefault(__webpack_require__(13));
+const chatRoomRoute_1 = tslib_1.__importDefault(__webpack_require__(14));
 const app = (0, express_1.default)();
 const server = http.createServer(app);
 const io = new socket_io_1.Server(server, {
@@ -418,40 +540,159 @@ server.listen(port, () => {
     console.log(`Listening at http://localhost:${port}/api`);
 });
 server.on('error', console.error);
-const onlineUsers = new Map();
+const activeUsers = new Map();
 io.on('connection', (socket) => {
+    socket.emit('connectionStatus', 'active');
     console.log(`User connected: ${socket.id}`);
-    global.chatSocket = socket;
-    socket.on("add-user", (userId) => {
-        onlineUsers.set(userId, socket.id);
-    });
-    socket.on("send-msg", (data) => {
-        const sendUserSocket = onlineUsers.get(data.to);
-        if (sendUserSocket) {
-            socket.to(sendUserSocket).emit("msg-recieve", data.msg);
+    // When a user joins a specific chat room, emit a message to that room
+    socket.on('joinRoom', (chatRoomId, user) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+        socket.join(chatRoomId);
+        console.log(`${user.firstName} ${user.lastName} has joined the chat room - ${chatRoomId}.`);
+        try {
+            // Use MongoDB aggregation to join messages with user names
+            const messages = yield Message_1.default.aggregate([
+                {
+                    $match: { chatRoomId: new mongoose_1.default.Types.ObjectId(chatRoomId) }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'senderInfo',
+                        foreignField: '_id',
+                        as: 'senderInfo'
+                    }
+                },
+                {
+                    $unwind: '$senderInfo'
+                },
+                {
+                    $project: {
+                        text: 1,
+                        timestamp: 1,
+                        'senderInfo.firstName': 1,
+                        'senderInfo.lastName': 1,
+                        'senderInfo._id': 1,
+                        'systemMessage': 1,
+                    }
+                }
+            ]);
+            socket.to(chatRoomId).emit('systemMessage', messages);
         }
-    });
-    socket.on('chatMessage', (data) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+        catch (error) {
+            console.error('Error fetching chat room messages:', error);
+            // res.status(500).json({ error: 'Failed to fetch chat room messages' });
+        }
+        activeUsers.set(socket.id, { chatRoomId: chatRoomId, user });
+    }));
+    socket.on('leaveRoom', (chatRoomId, user) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+        // const userData = activeUsers.get(socket.id);
+        // socket.leave(chatRoomId);
+        // console.log(`${user.firstName} ${user.lastName} has left the chat room.`);
+        // io.to(chatRoomId).emit('systemMessage', `${user.firstName} ${user.lastName} has left the chat.`);
+        // // Remove the user from the 'users' Map
+        // activeUsers.delete(socket.id);
+        // if (userData) {
+        //   const { user } = userData;
+        // socket.leave(chatRoomId);
+        console.log(`${user.firstName} ${user.lastName} has left the chat room.`);
+        try {
+            // Use MongoDB aggregation to join messages with user names
+            const messages = yield Message_1.default.aggregate([
+                {
+                    $match: { chatRoomId: new mongoose_1.default.Types.ObjectId(chatRoomId) }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'senderInfo',
+                        foreignField: '_id',
+                        as: 'senderInfo'
+                    }
+                },
+                {
+                    $unwind: '$senderInfo'
+                },
+                {
+                    $project: {
+                        text: 1,
+                        timestamp: 1,
+                        'senderInfo.firstName': 1,
+                        'senderInfo.lastName': 1,
+                        'senderInfo._id': 1,
+                        'systemMessage': 1,
+                    }
+                }
+            ]);
+            socket.to(chatRoomId).emit('systemMessage', messages);
+            console.log(`Emitting ${JSON.stringify(messages)}to chatRoom - ${chatRoomId} as systemMessage`);
+        }
+        catch (error) {
+            console.error('Error fetching chat room messages:', error);
+            // res.status(500).json({ error: 'Failed to fetch chat room messages' });
+        }
+        // Remove the user from the 'activeUsers' Map
+        socket.leave(chatRoomId);
+        activeUsers.delete(socket.id);
+        // }
+    }));
+    socket.on('chatMessage', (chatRoomId, user, messageText) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+        socket.join(chatRoomId);
         try {
             // Ensure that the message object contains necessary properties
-            if (!data.message || !data.message.senderInfo || !data.message.chatRoomId || !data.message.text) {
-                console.error('Invalid message received:', data.message);
+            if (!chatRoomId || !user || !messageText) {
+                console.error('Invalid message received:', { chatRoomId, user, messageText });
                 return;
             }
-            const message = data.message;
-            console.log(`Received message from ${JSON.stringify(message.senderInfo)} in room ${message.chatRoomId}: ${message.text}`);
+            // const message = data.message
+            console.log(`Received message from ${JSON.stringify(user)} in room ${chatRoomId}: ${messageText}`);
             // Create a new message instance
             const newMessage = new Message_1.default({
-                senderInfo: `${message.senderInfo._id}`,
-                text: message.text,
-                chatRoomId: message.chatRoomId
+                senderInfo: user,
+                text: messageText,
+                chatRoomId: chatRoomId
             });
             // Save the message to the database
             yield newMessage.save();
             console.log('Message saved to the database');
-            socket.join(message.chatRoomId);
+            //socket.join(message.chatRoomId)
             // Broadcast the message to all connected clients
-            socket.to(message.chatRoomId).emit('receive_message', newMessage);
+            try {
+                // Use MongoDB aggregation to join messages with user names
+                const messages = yield Message_1.default.aggregate([
+                    {
+                        $match: { chatRoomId: new mongoose_1.default.Types.ObjectId(chatRoomId) }
+                    },
+                    {
+                        $lookup: {
+                            from: 'users',
+                            localField: 'senderInfo',
+                            foreignField: '_id',
+                            as: 'senderInfo'
+                        }
+                    },
+                    {
+                        $unwind: '$senderInfo'
+                    },
+                    {
+                        $project: {
+                            text: 1,
+                            timestamp: 1,
+                            'senderInfo.firstName': 1,
+                            'senderInfo.lastName': 1,
+                            'senderInfo._id': 1,
+                            'systemMessage': 1,
+                        }
+                    }
+                ]);
+                // Optionally, you can also fetch the chat room name
+                const chatRoom = yield ChatRooms_1.default.findById(chatRoomId, 'name');
+                console.log(`Recent message - ${JSON.stringify(messages[messages.length - 1])} in room ${chatRoomId}`);
+                socket.to(chatRoomId).emit('receive_message', messages);
+            }
+            catch (error) {
+                console.error('Error fetching chat room messages:', error);
+                // res.status(500).json({ error: 'Failed to fetch chat room messages' });
+            }
         }
         catch (error) {
             console.error('Error handling message:', error);
@@ -465,8 +706,21 @@ io.on('connection', (socket) => {
     // Handle disconnections
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
-        // Remove the socket from the active connections map
-        // activeConnections.delete(socket);
+        socket.emit('connectionStatus', 'disconnected');
+        const userData = activeUsers.get(socket.id);
+        // console.log(`User disconnected: ${socket.id}`);
+        // io.to(chatRoomId).emit('systemMessage', `${user.firstName} ${user.lastName} has left the chat.`);
+        // socket.leave(chatRoomId);
+        // activeUsers.delete(socket.id);
+        if (userData) {
+            const { roomId, user } = userData;
+            // Remove the user from the 'activeUsers' Map
+            activeUsers.delete(socket.id);
+            // Emit a system message to notify other users when someone disconnects
+            io.to(roomId).emit('systemMessage', `${user.firstName} ${user.lastName} has left the chat.`);
+            // Leave the room
+            socket.leave(roomId);
+        }
     });
 });
 

@@ -134,45 +134,174 @@ server.listen(port, () => {
 server.on('error', console.error);
 
 
-const onlineUsers: Map<string, string> = new Map();
+const activeUsers = new Map();
+
 
 io.on('connection', (socket) => {
+  socket.emit('connectionStatus', 'active');
   console.log(`User connected: ${socket.id}`);
-
-  global.chatSocket = socket;
-  socket.on("add-user", (userId) =>{
-    onlineUsers.set(userId, socket.id)
-  })
-  socket.on("send-msg", (data: { to: string; msg: string }) => {
-    const sendUserSocket = onlineUsers.get(data.to);
-    if (sendUserSocket) {
-      socket.to(sendUserSocket).emit("msg-recieve", data.msg);
+  // When a user joins a specific chat room, emit a message to that room
+  socket.on('joinRoom', async (chatRoomId,user) => {
+    socket.join(chatRoomId);
+    console.log(`${user.firstName} ${user.lastName} has joined the chat room - ${chatRoomId}.`);
+    try {
+      // Use MongoDB aggregation to join messages with user names
+      const messages = await Message.aggregate([
+        {
+          $match: { chatRoomId: new mongoose.Types.ObjectId(chatRoomId) }
+        },
+        {
+          $lookup: {
+            from: 'users', // Assuming your user collection is named 'users'
+            localField: 'senderInfo',
+            foreignField: '_id',
+            as: 'senderInfo'
+          }
+        },
+        {
+          $unwind: '$senderInfo'
+        },
+        {
+          $project: {
+            text: 1,
+            timestamp: 1,
+            'senderInfo.firstName': 1,
+            'senderInfo.lastName': 1,
+            'senderInfo._id':1,
+            'systemMessage': 1, 
+          }
+        }
+      ]);
+  
+      socket.to(chatRoomId).emit('systemMessage', messages);
+      
+    } catch (error) {
+      console.error('Error fetching chat room messages:', error);
+      // res.status(500).json({ error: 'Failed to fetch chat room messages' });
     }
+    
+
+    activeUsers.set(socket.id, { chatRoomId: chatRoomId, user });
+  });
+
+  socket.on('leaveRoom', async (chatRoomId,user,) => {
+    // const userData = activeUsers.get(socket.id);
+    // socket.leave(chatRoomId);
+    // console.log(`${user.firstName} ${user.lastName} has left the chat room.`);
+    // io.to(chatRoomId).emit('systemMessage', `${user.firstName} ${user.lastName} has left the chat.`);
+
+    // // Remove the user from the 'users' Map
+    // activeUsers.delete(socket.id);
+    // if (userData) {
+    //   const { user } = userData;
+      
+      // socket.leave(chatRoomId);
+      console.log(`${user.firstName} ${user.lastName} has left the chat room.`);
+      
+      try {
+        // Use MongoDB aggregation to join messages with user names
+        const messages = await Message.aggregate([
+          {
+            $match: { chatRoomId: new mongoose.Types.ObjectId(chatRoomId) }
+          },
+          {
+            $lookup: {
+              from: 'users', // Assuming your user collection is named 'users'
+              localField: 'senderInfo',
+              foreignField: '_id',
+              as: 'senderInfo'
+            }
+          },
+          {
+            $unwind: '$senderInfo'
+          },
+          {
+            $project: {
+              text: 1,
+              timestamp: 1,
+              'senderInfo.firstName': 1,
+              'senderInfo.lastName': 1,
+              'senderInfo._id':1,
+              'systemMessage': 1, 
+            }
+          }
+        ]);
+    
+        socket.to(chatRoomId).emit('systemMessage', messages);
+        console.log(`Emitting ${JSON.stringify(messages)}to chatRoom - ${chatRoomId} as systemMessage`)
+        
+      } catch (error) {
+        console.error('Error fetching chat room messages:', error);
+        // res.status(500).json({ error: 'Failed to fetch chat room messages' });
+      }
+      // Remove the user from the 'activeUsers' Map
+      socket.leave(chatRoomId);
+      activeUsers.delete(socket.id);
+    // }
   });
   
-  socket.on('chatMessage', async (data) => {
+  
+  socket.on('chatMessage', async (chatRoomId, user, messageText) => {
+    socket.join(chatRoomId);
     try {
       // Ensure that the message object contains necessary properties
-      if (!data.message || !data.message.senderInfo || !data.message.chatRoomId || !data.message.text) {
-        console.error('Invalid message received:', data.message);
+      if (!chatRoomId || !user || !messageText) {
+        console.error('Invalid message received:', {chatRoomId, user, messageText});
         return;
       }
-      const message = data.message
-      console.log(`Received message from ${JSON.stringify(message.senderInfo)} in room ${message.chatRoomId}: ${message.text}`);
+      // const message = data.message
+      console.log(`Received message from ${JSON.stringify(user)} in room ${chatRoomId}: ${messageText}`);
 
       // Create a new message instance
       const newMessage = new Message({
-        senderInfo: `${message.senderInfo._id}`,
-        text: message.text,
-        chatRoomId: message.chatRoomId
+        senderInfo: user,
+        text: messageText,
+        chatRoomId: chatRoomId
       });
 
       // Save the message to the database
       await newMessage.save();
       console.log('Message saved to the database');
-      socket.join(message.chatRoomId)
+      //socket.join(message.chatRoomId)
       // Broadcast the message to all connected clients
-      socket.to(message.chatRoomId).emit('receive_message', newMessage);
+      try {
+        // Use MongoDB aggregation to join messages with user names
+        const messages = await Message.aggregate([
+          {
+            $match: { chatRoomId: new mongoose.Types.ObjectId(chatRoomId) }
+          },
+          {
+            $lookup: {
+              from: 'users', // Assuming your user collection is named 'users'
+              localField: 'senderInfo',
+              foreignField: '_id',
+              as: 'senderInfo'
+            }
+          },
+          {
+            $unwind: '$senderInfo'
+          },
+          {
+            $project: {
+              text: 1,
+              timestamp: 1,
+              'senderInfo.firstName': 1,
+              'senderInfo.lastName': 1,
+              'senderInfo._id':1,
+              'systemMessage': 1, 
+            }
+          }
+        ]);
+    
+        // Optionally, you can also fetch the chat room name
+        const chatRoom = await ChatRoom.findById(chatRoomId, 'name');
+        console.log(`Recent message - ${JSON.stringify(messages[messages.length -1])} in room ${chatRoomId}`)
+        socket.to(chatRoomId).emit('receive_message', messages);
+      } catch (error) {
+        console.error('Error fetching chat room messages:', error);
+        // res.status(500).json({ error: 'Failed to fetch chat room messages' });
+      }
+     
     } catch (error) {
       console.error('Error handling message:', error);
     }
@@ -186,7 +315,26 @@ io.on('connection', (socket) => {
   // Handle disconnections
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id}`);
-    // Remove the socket from the active connections map
-    // activeConnections.delete(socket);
+    socket.emit('connectionStatus', 'disconnected');
+    const userData = activeUsers.get(socket.id);
+
+    // console.log(`User disconnected: ${socket.id}`);
+    // io.to(chatRoomId).emit('systemMessage', `${user.firstName} ${user.lastName} has left the chat.`);
+    // socket.leave(chatRoomId);
+    // activeUsers.delete(socket.id);
+    if (userData) {
+      const { roomId, user } = userData;
+
+      // Remove the user from the 'activeUsers' Map
+      activeUsers.delete(socket.id);
+
+      // Emit a system message to notify other users when someone disconnects
+      io.to(roomId).emit('systemMessage', `${user.firstName} ${user.lastName} has left the chat.`);
+
+      // Leave the room
+      socket.leave(roomId);
+    }
+
+    
   });
 });
