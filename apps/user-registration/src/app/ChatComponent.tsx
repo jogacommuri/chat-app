@@ -1,18 +1,27 @@
 import React, { useContext, useEffect, useState } from 'react'
 import RoomList from './RoomList'
-import UserContext from './userContext';
+import UserContextProvider, { useUserContext } from './UserContextProvider';
 import useInitials from './hooks/useInitials';
 import axios from 'axios';
 import CreateChatRoom from './CreateChatRoom';
 import { io } from 'socket.io-client';
-import ChatInterface from './chatInterface';
+import ChatInterface from './ChatInterface';
 import UsersList from './UsersList';
 
+interface UserType{
+        firstName: string;
+        lastName: string;
+        email: string;
+        _id: string;
+}
 
-export default function ChatComponent() {
-    const user =  useContext(UserContext);
-    console.log("USER =>", user)
-    const userName = `${user.firstName} ${user.lastName}`;
+export default function ChatComponent( userDetails ) {
+    // const { user } = useUserContext();
+
+    // console.log("USER =>", user)
+    const user = userDetails.userDetails;
+    const userName = user ? `${user.firstName} ${user.lastName}` : 'Guest';
+
     const userInitials = useInitials(userName);
 
     const [chatRooms , setChatRooms] = useState([]);
@@ -36,6 +45,9 @@ export default function ChatComponent() {
     const closeModal = () => {
         setIsModalOpen(false);
     };
+    useEffect(() => {
+        console.log('User state updated from ChatComponent:', userDetails);
+      }, [user]);
     useEffect(() => {
     // Create a connection to the Socket.IO server
     const socketInstance = io('http://localhost:3333'); // Replace with your server URL
@@ -148,10 +160,10 @@ export default function ChatComponent() {
         setRoomId(roomId); 
         
       };
-      const leaveChatRoom = () => {
+      const leaveChatRoom = (roomId) => {
         if (roomId) {
           socket.emit('leaveRoom', roomId, user);
-          setRoomId(null); // Reset the current room ID in state
+          setRoomId(roomId); // Reset the current room ID in state
           setActiveRooms((prevActiveRooms) => prevActiveRooms.filter((room) => room !== roomId));
         }
       };
@@ -235,7 +247,7 @@ export default function ChatComponent() {
             </div>
         </div>
         <div className='w-[50%] bg-white border border-gray-300 h-screen'>
-            <ChatInterface messages={messages} chatRoomName={chatRoomName} sendMessage={sendMessage}/>
+            <ChatInterface messages={messages} chatRoomName={chatRoomName} sendMessage={sendMessage} userDetails={userDetails}/>
         </div>
         <div className='w-[25%] bg-white border border-gray-300 h-screen'>
             <UsersList userList={usersInRoom}/>

@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import UserContext from './userContext';
+import UserContextProvider, { useUserContext } from './UserContextProvider';
 
 export default function LoginComponent() {
     const [formData, setFormData] = useState({
@@ -13,12 +13,12 @@ export default function LoginComponent() {
         email: '',
         password: []
     });
-    const user =  useContext(UserContext);
+    const { user,setUser } = useUserContext();
     const navigate = useNavigate();
 
     const inputClass = 'block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-sm border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-slate-600 focus:outline-none focus:ring-0 focus:border-slate-200 peer';
     const labelClass = 'absolute text-sm tracking-wide text-neutral-400 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-slate-600 peer-focus:font-bold peer-focus:dark:text-slate-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-1';
-    const handleChange = (event) =>{
+    const handleChange = (event: { target: { name: any; value: any; }; }) =>{
         const {name, value} = event.target;
         setFormData({
           ...formData,
@@ -66,8 +66,8 @@ export default function LoginComponent() {
             console.log("resp =>", response);
             // console.log();
             const userDetails = response.data.data;
-            const name = `${userDetails.firstName} ${userDetails.lastName}`
-            user.setUser(userDetails);
+            
+            setUser(userDetails);
 
             
             navigate('/');
@@ -82,7 +82,7 @@ export default function LoginComponent() {
                 <h1 className="text-lg font-mono font-medium text-gray-700 md:text-xl dark:text-white">
                     Sign In
                 </h1>  
-                <form className="mt-6 grid gap-4 lg:gap-6 font-mono" onSubmit={handleSubmit} >
+                <form className="mt-6 grid gap-4 lg:gap-6 font-mono" onSubmit={(event: React.FormEvent<HTMLFormElement>) => handleSubmit(event)} >
                 <div className="relative">
                 <input 
                     type="email" 
