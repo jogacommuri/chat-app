@@ -2,27 +2,17 @@ import React from 'react';
 import useInitials from './hooks/useInitials';
 import axios from 'axios';
 
-export default function RoomList({ rooms , handleJoinRoom, userInRoom, handleLeaveRoom, activeRooms,setActiveRooms}) {
+export default function RoomList({ rooms ,  userInRoom,  activeRooms,setActiveRooms}) {
   
-  const roomList = Array.isArray(rooms) ? rooms : [];
-console.log("ACTIVE ROOM =>",activeRooms)
+    const roomList = Array.isArray(rooms) ? rooms : [];
+    // console.log("ACTIVE ROOM =>",activeRooms
     const roomItems = roomList.map((room, index) => {
         const initials = useInitials(room.name);
 
-        const handleClick = () => {
-            if (userInRoom(room._id)) {
-              // User is already in the room, so leave it
-              handleLeaveRoom(room._id);
-              setActiveRooms((prevActiveRooms) => prevActiveRooms.filter((activeRoom) => activeRoom !== room._id));
-            } else {
-              // User is not in the room, so join it
-              handleJoinRoom(room._id);
-              setActiveRooms((prevActiveRooms) => [...prevActiveRooms, room._id]);
-            }
-          };
+        
           const buttonAction = userInRoom(room._id) ? 'Leave' : 'Join';
           const isUserInActiveRoom = activeRooms.length > 0;
-          console.log("isUserInActiveRoom =>", isUserInActiveRoom)
+          // console.log("isUserInActiveRoom =>", isUserInActiveRoom)
         return (
         <li key={index} className="py-3 sm:py-4">
             <div className="flex items-center space-x-4">
@@ -45,7 +35,7 @@ console.log("ACTIVE ROOM =>",activeRooms)
                 className={`inline-flex items-center text-base font-semibold text-gray-900 dark:text-white ${
                     activeRooms.length>0 && !activeRooms.includes(room._id) ? 'text-gray-300' : 'text-gray-900'
                   }`}
-                onClick={handleClick}
+                onClick={()=>setActiveRooms(room._id)}
                 disabled={activeRooms.length>0 && !activeRooms.includes(room._id)}
                 >
                     {buttonAction}

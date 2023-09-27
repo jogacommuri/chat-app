@@ -1,17 +1,17 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useUserContext } from './UserContextProvider';
+import { useUserContext } from './UserContext';
 import useInitials from './hooks/useInitials';
 
-export default function Header(userDetails) {
-//   const { user } = useUserContext();
-//   console.log("USER =>", user);
-    const user = userDetails.userDetails;
-  const userName = user ? `${user.firstName} ${user.lastName}` : 'Guest';
-  const userInitials = useInitials(userName);
-  useEffect(() => {
-    console.log('User state updated from HEader:', userDetails);
-  }, [user]);
+export default function Header({ user }) {
+  // const { user } = useUserContext();
+
+    // const user = userDetails.userDetails;
+    const userName = user ? `${user.firstName} ${user.lastName}` : 'Guest';
+    const userInitials = useInitials(userName);
+    useEffect(() => {
+        console.log('User state updated from HEader:', user);
+    }, [user]);
 
   return (
     <div>

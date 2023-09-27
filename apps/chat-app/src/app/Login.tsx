@@ -1,7 +1,8 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import UserContextProvider, { useUserContext } from './UserContextProvider';
+import UserContextProvider, { useUserContext } from './UserContext';
+import { API_BASE_URL } from './api';
 
 export default function LoginComponent() {
     const [formData, setFormData] = useState({
@@ -57,24 +58,29 @@ export default function LoginComponent() {
     const handleSubmit = async (event) =>{
         event.preventDefault();
         if(validateForm()){
-          console.log("FORM VALID DO NEXT STEPS")
+         
           
           const {email, password} = formData;
-        //   console.log({ email, password});
-          axios.post(`http://localhost:3333/api/login`,  {email, password},{withCredentials:true})
+        
+          axios.post(`${API_BASE_URL}/api/login`,  {email, password},{withCredentials:true})
           .then(response=>{
-            console.log("resp =>", response);
-            // console.log();
-            const userDetails = response.data.data;
             
-            setUser(userDetails);
-
+            // console.log();
+            const userDetails = response.data;
+            
+            setUser(response.data);
             
             navigate('/');
           })
+          .catch(error => {
+            console.error("Error:", error);
+          });
     
         }
     }
+    useEffect(() => {
+        console.log("User state updated at Login:", user);
+      }, [user]);
   return (
     <div className='w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700 '>       
         <div className='p-6 space-y-4 md:space-y-6 sm:p-8'>
@@ -103,7 +109,7 @@ export default function LoginComponent() {
                 </div>
                 <div className="relative">
                 <input 
-                    type="text" 
+                    type="password" 
                     id="password" 
                     className={`${inputClass}
                     ${errors.password ? 'text-red-500' : ''}`} 

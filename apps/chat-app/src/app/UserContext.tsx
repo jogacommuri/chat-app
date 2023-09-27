@@ -1,25 +1,29 @@
-import React, { ReactNode, createContext, useContext, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useState } from 'react';
 
+// Define the user object type
 interface UserType {
+  _id: string;
   firstName: string;
   lastName: string;
   email: string;
-  _id: string;
 }
 
+// Define the context type
 interface UserContextType {
   user: UserType | null;
   setUser: React.Dispatch<React.SetStateAction<UserType | null>>;
 }
 
+// Create the initial context value
 const initialUserContextValue: UserContextType = {
   user: null,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setUser: () => {},
 };
 
+// Create the context
 const UserContext = createContext<UserContextType>(initialUserContextValue);
 
+// Custom hook for using the user context
 export const useUserContext = () => {
   const context = useContext(UserContext);
   if (!context) {
@@ -28,7 +32,8 @@ export const useUserContext = () => {
   return context;
 };
 
-const UserContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+// Create the UserContextProvider component
+export const UserContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserType | null>(null);
 
   return (
@@ -37,5 +42,3 @@ const UserContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     </UserContext.Provider>
   );
 };
-
-export default UserContextProvider;

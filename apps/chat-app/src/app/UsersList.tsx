@@ -3,7 +3,7 @@ import useInitials from './hooks/useInitials';
 
 export default function UsersList(userList) {
     const userLists = Array.isArray(userList.userList) ? userList.userList : [];
-    console.log("LIST FROM ListBulletIcon", userList.userList);
+    // console.log("LIST FROM ListBulletIcon", userList.userList);
 
     const userItem = userLists.map((user, index) => {
         const initials = useInitials(`${user.firstName} ${user.lastName}`);
