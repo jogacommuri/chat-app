@@ -234,6 +234,30 @@ export default function ChatComponent({user} ) {
           setActiveRooms((prevActiveRooms) => [...prevActiveRooms, roomId]);
         }
       };
+       
+      const handleCreateRoom = async (formData) => {
+        console.log("control in handle create room")
+        try {
+          const response = await axios.post(`${API_BASE_URL}/api/chatrooms`,  formData,{withCredentials:true,
+            headers: {
+              Authorization: `${authToken}`,
+            },});
+          console.log(response.data)
+          setChatRooms((prevChatRooms) => [...prevChatRooms, response.data.newRoom]);
+          if(activeRooms.length<1){
+            handleJoinRoom(response.data.newRoom._id)
+          }else{
+            console.log("user is already in another room")
+          }
+          
+          // setUserRooms((prevRooms) => prevRooms.filter((room) => room !== roomId));
+          // leaveChatRoom(roomId)
+        } catch (error) {
+          // Handle errors, e.g., display an error message to the user
+          console.error('Error creating chat room:', error);
+        }
+       
+      };
   return (
     <div className='w-screen flex px-6 rounded-lg'>
         <div className='w-[25%] bg-white border border-gray-300 h-screen'>
@@ -272,7 +296,7 @@ export default function ChatComponent({user} ) {
             <UsersList userList={usersInRoom}/>
         </div>
 
-        <CreateChatRoom isOpen={isModalOpen} closeModal={closeModal} setChatRooms={setChatRooms}/>
+        <CreateChatRoom isOpen={isModalOpen} closeModal={closeModal} setChatRooms={setChatRooms} handleCreateRoom={handleCreateRoom}/>
     </div>
   )
 }

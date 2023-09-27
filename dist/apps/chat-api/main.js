@@ -137,9 +137,24 @@ const router = express_1.default.Router();
 router.post('/chatrooms', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, description, users } = req.body;
-        const newRoom = new ChatRooms_1.default({ name, description, users });
+        const newRoom = new ChatRooms_1.default({ name, description });
         yield newRoom.save();
-        res.status(201).json(newRoom);
+        const roomId = newRoom._id.toString();
+        const userId = users[0]._id.toString();
+        const user = yield User_1.default.findById(userId);
+        const firstName = user === null || user === void 0 ? void 0 : user.firstName.toString();
+        const lastName = user === null || user === void 0 ? void 0 : user.lastName.toString();
+        const createRoomMessage = new Message_1.default({
+            senderInfo: userId,
+            text: `${firstName} ${lastName} has created a chat.`,
+            chatRoomId: roomId,
+            systemMessage: true, // Set as a system message
+        });
+        // Save the updated chat room
+        yield Promise.all([createRoomMessage.save()]);
+        // Optionally, you can send back the updated chat room data to the client
+        res.status(200).json({ message: 'Successfully created the chat room', newRoom });
+        //res.status(201).json(newRoom);
     }
     catch (error) {
         res.status(500).json({ error: 'Error creating chat room' });

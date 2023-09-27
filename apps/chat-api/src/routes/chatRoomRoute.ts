@@ -14,9 +14,26 @@ const router: Router = express.Router();
 router.post('/chatrooms', async (req: Request, res: Response) => {
   try {
     const { name, description, users }: IChatRoom = req.body;
-    const newRoom = new ChatRoom({ name, description, users });
+    const newRoom = new ChatRoom({ name, description });
     await newRoom.save();
-    res.status(201).json(newRoom);
+    
+    const roomId: string = newRoom._id.toString();
+    const userId: string = users[0]._id.toString();
+    const user = await User.findById(userId);
+    const firstName: string = user?.firstName.toString();
+    const lastName: string = user?.lastName.toString();
+    const createRoomMessage = new Message({
+      senderInfo: userId, // Reference to the user who joined
+      text: `${firstName} ${lastName} has created a chat.`,
+      chatRoomId: roomId, // Reference to the chat room
+      systemMessage: true, // Set as a system message
+    });
+    // Save the updated chat room
+    await Promise.all([ createRoomMessage.save()]);
+
+    // Optionally, you can send back the updated chat room data to the client
+    res.status(200).json({ message: 'Successfully created the chat room', newRoom });
+    //res.status(201).json(newRoom);
   } catch (error) {
     res.status(500).json({ error: 'Error creating chat room' });
   }
