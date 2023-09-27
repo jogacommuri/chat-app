@@ -34,7 +34,7 @@ export default function ChatComponent({user} ) {
     const [messages, setMessages] = useState([]);
 
     const [roomId, setRoomId] = useState(null);
-    const [chatRoomName, setChatRoomName] = useState(null);
+    const [chatRoomName, setChatRoomName] = useState([]);
     const [usersInRoom, setUsersInRoom] = useState(null);
 
     const [userRooms, setUserRooms] = useState([]);

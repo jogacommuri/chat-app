@@ -68,7 +68,7 @@ export default function UserRegistrationForm() {
     }
   
     if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
+      newErrors.password = ['Password must be at least 8 characters long'];
       valid = false;
     }
      // Additional Password Validations (e.g., complexity requirements)

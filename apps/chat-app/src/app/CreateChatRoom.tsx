@@ -29,7 +29,7 @@ export default function CreateChatRoom({ isOpen, closeModal, setChatRooms }) {
           const response = await axios.post(`${API_BASE_URL}/api/chatrooms`,  formData,{withCredentials:true});
           // Handle the response here, e.g., update state or show a success message
           
-          setChatRooms(response.data)
+        //   setChatRooms(response.data)
           setChatRooms((prevChatRooms) => [...prevChatRooms, response.data]);
         } catch (error) {
           // Handle errors, e.g., display an error message to the user
