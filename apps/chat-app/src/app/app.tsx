@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, useNavigate, Route, Routes } from 'react-router-dom';
 import axios from 'axios';
-import UserContextProvider from './UserContext';
+
 import Header from './Navigation';
 import ChatComponent from './ChatComponent';
 import LoginComponent from './Login';

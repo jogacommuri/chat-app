@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useUserContext } from './UserContext';
+import { useUserContext } from './UserContextProvider';
 import useInitials from './hooks/useInitials';
 
 export default function Header({ user }) {

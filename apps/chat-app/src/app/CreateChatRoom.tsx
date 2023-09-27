@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useContext, useState } from 'react'
 import Modal from 'react-modal';
-import UserContextProvider, { useUserContext } from './UserContext';
+import  { useUserContext } from './UserContextProvider';
 import { API_BASE_URL } from './api';
 
 export default function CreateChatRoom({ isOpen, closeModal, setChatRooms }) {
