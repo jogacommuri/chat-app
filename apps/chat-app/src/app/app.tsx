@@ -40,6 +40,8 @@ export function App() {
           navigate('/login')
         });
       } else{
+        console.error('Error fetching user data: token not present');
+        setLoading(false);
         navigate('/login');
       }
   }, []);
