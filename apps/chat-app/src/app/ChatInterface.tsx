@@ -67,41 +67,47 @@ export default function ChatInterface({ messages, chatRoomName, sendMessage, use
         console.log('User state updated from ChatInterface:', user);
       }, [user]);
     return (
-        <div className="flex-1 p:2 sm:p-6 flex flex-col font-mono h-screen justify-end">
+        <div className="flex-1 p:2 sm:p-6 flex flex-col font-mono sm:h-screen justify-start">
             <div className="flex flex-col items-center justify-items-start w-full p-4">
                 <div className='ml-4'>
-                <span className='font-medium font-mono text-gray-600 dark:text-gray-300'>{chatRoomName}</span>
+                <span className='font-medium font-mono text-gray-600 dark:text-gray-300'>{chatRoomName ? chatRoomName : " Please join a room to start messaging."}</span>
                 </div>
             </div>
             <hr />
             <div className="flex flex-col space-y-4 p-3 overflow-y-auto scrollbar-thumb-blue scrollbar-thumb-rounded scrollbar-track-blue-lighter scrollbar-w-2 scrolling-touch" ref={messageContainerRef}>
-            {messages.map((message, index) => (
-            <div className="chat-message" key={index}>
-                {message.systemMessage ?
-                    <div className='flex items-center justify-center'>
-                        <span className=" space-y-2 text-xs max-w-xs mx-2px-4 py-2 rounded-lg inline-block bg-white-300 text-slate-600 italic" dangerouslySetInnerHTML={{ __html: message.text }}>
-                            
-                        </span>
-                    </div>
-                   : 
-                <div className={`flex flex-row w-full items-end ${user?._id === message.senderInfo._id ? 'justify-end' : ''}` }>
-                    <div className={`flex flex-col space-y-2 text-xs max-w-xs mx-2 ${user?._id === message.senderInfo._id ? 'order-1 items-end' : 'order-2 items-start'}`}>
-                        <div>
-                        <span className="px-4 py-2 rounded-lg inline-block bg-gray-300 text-gray-600" dangerouslySetInnerHTML={{ __html: message.text }}>
-                           
-                        </span>
-                        </div>
-                    </div>
-                    <div className={`relative inline-flex items-center justify-center w-10 h-10 overflow-hidden bg-gray-100 rounded-full dark:bg-gray-600  ${user?._id === message.senderInfo._id ? 'order-2' : 'order-1'}` }>
-                        <span className="font-medium text-gray-600 dark:text-gray-300">
-                        {initials[message.senderInfo._id]}
-                        </span>
-                    </div>
-                </div>
-                }
-                
+            {messages.length < 1 ? (
+            <div>
+                Please join a room to start messaging.
             </div>
-            ))}
+            ) : 
+            (messages.map((message, index) => (
+                <div className="chat-message" key={index}>
+                    {message.systemMessage ?
+                       ( <div className='flex items-center justify-center'>
+                            <span className=" space-y-2 text-xs max-w-xs mx-2px-4 py-2 rounded-lg inline-block bg-white-300 text-slate-600 italic" dangerouslySetInnerHTML={{ __html: message.text }}>
+                                
+                            </span>
+                        </div>)
+                    : 
+                    (<div className={`flex flex-row w-full items-end ${user?._id === message.senderInfo._id ? 'justify-end' : ''}` }>
+                        <div className={`flex flex-col space-y-2 text-xs max-w-xs mx-2 ${user?._id === message.senderInfo._id ? 'order-1 items-end' : 'order-2 items-start'}`}>
+                            <div>
+                            <span className="px-4 py-2 rounded-lg inline-block bg-gray-300 text-gray-600" dangerouslySetInnerHTML={{ __html: message.text }}>
+                            
+                            </span>
+                            </div>
+                        </div>
+                        <div className={`relative inline-flex items-center justify-center w-10 h-10 overflow-hidden bg-gray-100 rounded-full dark:bg-gray-600  ${user?._id === message.senderInfo._id ? 'order-2' : 'order-1'}` }>
+                            <span className="font-medium text-gray-600 dark:text-gray-300">
+                            {initials[message.senderInfo._id]}
+                            </span>
+                        </div>
+                    </div>)
+                    }
+                    
+                </div>
+                ))
+            )}
             </div>
                 <div className="border-t-2 border-gray-200 p-4 pt-4 mb-2 sm:mb-0">
                     <div className="relative">
