@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useUserContext } from './UserContextProvider';
 import { API_BASE_URL } from './api';
+import Cookies from "js-cookie";
 
 export default function LoginComponent() {
     const [formData, setFormData] = useState({
@@ -69,7 +70,8 @@ export default function LoginComponent() {
             const userDetails = response.data;
             
             setUser(response.data);
-            
+            Cookies.set("token", response.data.token);
+            Cookies.set("userData", JSON.stringify(response.data));
             navigate('/');
           })
           .catch(error => {

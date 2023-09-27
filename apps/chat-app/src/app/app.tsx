@@ -47,8 +47,12 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const authToken = getAuthTokenFromCookie();
     console.log('1 => User state updated in app:', user);
-    
+    if(authToken && !user){
+      const userDetails = JSON.parse(Cookies.get("userData"));
+      setUser(userDetails)
+    }
   }, [user]);
   useEffect(() => {
     // Initialize Firebase
