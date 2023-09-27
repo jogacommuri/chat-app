@@ -63,7 +63,7 @@ export default function LoginComponent() {
           
           const {email, password} = formData;
         
-          axios.post(`http://localhost:3333/api/login`,  {email, password},{withCredentials:true})
+          axios.post(`${API_BASE_URL}/api/login`,  {email, password},{withCredentials:true})
           .then(response=>{
             
             // console.log();
