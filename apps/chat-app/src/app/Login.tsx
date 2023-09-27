@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useUserContext } from './UserContextProvider';
 import { API_BASE_URL } from './api';
+import Cookies from "js-cookie";
 
 export default function LoginComponent() {
     const [formData, setFormData] = useState({
@@ -62,14 +63,15 @@ export default function LoginComponent() {
           
           const {email, password} = formData;
         
-          axios.post(`${API_BASE_URL}/api/login`,  {email, password},{withCredentials:true})
+          axios.post(`http://localhost:3333/api/login`,  {email, password},{withCredentials:true})
           .then(response=>{
             
             // console.log();
             const userDetails = response.data;
             
             setUser(response.data);
-            
+            Cookies.set("token", response.data.token);
+            Cookies.set("userData", JSON.stringify(response.data));
             navigate('/');
           })
           .catch(error => {

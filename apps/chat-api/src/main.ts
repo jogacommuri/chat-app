@@ -119,7 +119,7 @@ app.post('/api/login', (req,res)=>{
           };
           res.cookie('token',token);
           
-          res.status(200).json({_id,email, firstName, lastName});
+          res.status(200).json({_id,email, firstName, lastName,token});
           //res.json({_id,email, firstName, lastName})
         })
       }else{
