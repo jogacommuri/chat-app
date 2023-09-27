@@ -10,6 +10,7 @@ import Cookies from "js-cookie";
 import { API_BASE_URL } from './api';
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken } from 'firebase/messaging';
+import { useUserContext } from './UserContextProvider';
 
 interface User {
   _id: string;
@@ -19,7 +20,8 @@ interface User {
 }
 
 export function App() {
-  const [user, setUser] = useState<User | null>(null);
+  // const [user, setUser] = useState<User | null>(null);
+  const { user, setUser } = useUserContext();
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   useEffect(() => {

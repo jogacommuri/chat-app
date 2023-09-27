@@ -70,8 +70,10 @@ export default function LoginComponent() {
             const userDetails = response.data;
             
             setUser(response.data);
+            const {_id, firstName, lastName, email} = response.data;
+
             Cookies.set("token", response.data.token);
-            Cookies.set("userData", JSON.stringify(response.data));
+            Cookies.set("userData", JSON.stringify({_id, firstName, lastName, email}));
             navigate('/');
           })
           .catch(error => {

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUserContext } from './UserContextProvider';
 import { API_BASE_URL } from './api';
+import Cookies from "js-cookie";
 
 export default function UserRegistrationForm() {
 
@@ -91,10 +92,13 @@ export default function UserRegistrationForm() {
       
       axios.post(`${API_BASE_URL}/api/register`, {firstName, lastName, email, password},{withCredentials:true})
       .then(response=>{
-        // console.log("resp =>", response);
+        console.log("register resp =>", response);
         // console.log({firstName, lastName, email, password});
-        const name = `${firstName} ${lastName}`
-        setUser({firstName, lastName, email,_id:''});
+        const {_id, firstName, lastName, email} = response.data;
+
+        Cookies.set("token", response.data.token);
+        Cookies.set("userData", JSON.stringify({_id, firstName, lastName, email}));
+        setUser({firstName, lastName, email,_id:response.data._id});
         navigate('/')
       })
 

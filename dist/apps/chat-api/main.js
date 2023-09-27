@@ -447,7 +447,9 @@ app.post('/api/register', (req, res) => {
                 res.sendStatus(500);
             }
             else {
-                res.status(201).cookie('token', token).send();
+                // res.status(201).cookie('token', token).send();
+                const { firstName, lastName, email, _id } = user;
+                res.status(201).json({ _id, email, firstName, lastName, token });
             }
         });
     }).catch(e => {
