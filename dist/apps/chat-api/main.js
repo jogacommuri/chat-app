@@ -170,60 +170,6 @@ router.get('/chatrooms/:id', (req, res) => tslib_1.__awaiter(void 0, void 0, voi
         res.status(500).json({ error: 'Error fetching chat room' });
     }
 }));
-// Get chat messages for a specific chat room
-// router.get('/chatroom/:roomId/messages', async (req, res) => {
-//   const roomId = req.params.roomId;
-//   try {
-//     // Use MongoDB aggregation to join messages with user names
-//     const messages = await Message.aggregate([
-//       {
-//         $match: { chatRoomId: new mongoose.Types.ObjectId(roomId) }
-//       },
-//       {
-//         $lookup: {
-//           from: 'users', // Assuming your user collection is named 'users'
-//           localField: 'senderInfo',
-//           foreignField: '_id',
-//           as: 'senderInfo'
-//         }
-//       },
-//       {
-//         $unwind: '$senderInfo'
-//       },
-//       {
-//         $project: {
-//           text: 1,
-//           timestamp: 1,
-//           'senderInfo.firstName': 1,
-//           'senderInfo.lastName': 1,
-//           'senderInfo._id':1
-//         }
-//       }
-//     ]);
-//     const chatRoom: IChatRoom | null = await ChatRoom.findById(roomId)
-//     .populate('users') // Populate the 'users' field with user documents
-//     .exec();
-//     if (!chatRoom) {
-//       throw new Error('Chat room not found');
-//     }
-//     const userObjectIds: mongoose.Types.ObjectId[] = chatRoom.users.map(
-//       (user: IUser) => mongoose.Types.ObjectId(user._id)
-//     );
-//     // Optionally, fetch additional attributes for users here
-//     const usersWithAdditionalAttributes: IUser[] = await User.find({
-//       _id: { $in: userObjectIds }
-//     });
-//     chatRoom.users = usersWithAdditionalAttributes;
-//     res.json({
-//       chatRoomName: chatRoom.name,
-//       chatRoomUsers: chatRoom.users,
-//       messages
-//     });
-//   } catch (error) {
-//     console.error('Error fetching chat room messages:', error);
-//     res.status(500).json({ error: 'Failed to fetch chat room messages' });
-//   }
-// });
 router.get('/chatroom/:roomId/messages', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     const roomId = req.params.roomId;
     if (!ObjectId.isValid(roomId)) {
@@ -286,7 +232,8 @@ router.get('/chatroom/:roomId/messages', (req, res) => tslib_1.__awaiter(void 0,
 }));
 router.post('/join/:roomId', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     const roomId = req.params.roomId;
-    const token = req.cookies.token;
+    const token = req.headers.authorization;
+    ;
     const { firstName, lastName } = req.body;
     if (!token) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -294,7 +241,7 @@ router.post('/join/:roomId', (req, res) => tslib_1.__awaiter(void 0, void 0, voi
     try {
         // Verify the user's token and get user information
         const userInfo = jsonwebtoken_1.default.verify(token, secret);
-        console.log(JSON.stringify(userInfo));
+        //console.log(JSON.stringify(userInfo))
         // Find the chat room by ID
         const chatRoom = yield ChatRooms_1.default.findById(roomId);
         if (!chatRoom) {
@@ -327,7 +274,8 @@ router.post('/join/:roomId', (req, res) => tslib_1.__awaiter(void 0, void 0, voi
 }));
 router.post('/leave/:roomId', (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     const { roomId } = req.params;
-    const token = req.cookies.token;
+    const token = req.headers.authorization;
+    ;
     const { firstName, lastName } = req.body;
     if (!token) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -337,7 +285,7 @@ router.post('/leave/:roomId', (req, res) => tslib_1.__awaiter(void 0, void 0, vo
         // For example, if you have a "chatRoom" model, you can use Mongoose to update it
         // Update the database to remove the user from the room's user list
         const userInfo = jsonwebtoken_1.default.verify(token, secret);
-        console.log(JSON.stringify(userInfo));
+        //console.log(JSON.stringify(userInfo))
         const chatRoom = yield ChatRooms_1.default.findById(roomId);
         if (!chatRoom) {
             return res.status(404).json({ error: 'Chat room not found' });
@@ -475,8 +423,9 @@ app.get('/api/test', (req, res) => {
 });
 const secret = "SECRET_1234";
 app.get('/api/user', (req, res) => {
-    const token = req.cookies.token;
-    // console.log("decoded",token)
+    //const token = req.cookies.token;
+    const token = req.headers.authorization;
+    //console.log("decoded",token)
     const userInfo = jsonwebtoken_1.default.verify(token, secret);
     // console.log("decoded",userInfo)
     User_1.default.findById(userInfo.id)
@@ -488,7 +437,7 @@ app.get('/api/user', (req, res) => {
 });
 app.post('/api/register', (req, res) => {
     const { email, firstName, lastName } = req.body;
-    console.log(req.body);
+    //console.log(req.body);
     const password = bcrypt_1.default.hashSync(req.body.password, 10);
     const user = new User_1.default({ email, firstName, lastName, password });
     user.save().then((user) => {
@@ -514,14 +463,14 @@ app.post('/api/login', (req, res) => {
             // res.json({passOk});
             if (passOk) {
                 jsonwebtoken_1.default.sign({ id: user._id }, secret, (err, token) => {
-                    const { firstName, lastName, email } = user;
+                    const { firstName, lastName, email, _id } = user;
                     const responseData = {
                         message: "Login successful",
-                        data: { firstName, lastName, email }
-                        // Add any other data you want to send
+                        data: { firstName, lastName, email, _id }
                     };
                     res.cookie('token', token);
-                    res.status(200).json(responseData);
+                    res.status(200).json({ _id, email, firstName, lastName });
+                    //res.json({_id,email, firstName, lastName})
                 });
             }
             else {

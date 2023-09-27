@@ -1,12 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react'
 import RoomList from './RoomList'
-import UserContextProvider, { useUserContext } from './UserContextProvider';
+import UserContextProvider, { useUserContext } from './UserContext';
 import useInitials from './hooks/useInitials';
 import axios from 'axios';
 import CreateChatRoom from './CreateChatRoom';
 import { io } from 'socket.io-client';
 import ChatInterface from './ChatInterface';
 import UsersList from './UsersList';
+import Cookies from "js-cookie";
+import { API_BASE_URL } from './api';
 
 interface UserType{
         firstName: string;
@@ -15,11 +17,11 @@ interface UserType{
         _id: string;
 }
 
-export default function ChatComponent( userDetails ) {
+export default function ChatComponent({user} ) {
     // const { user } = useUserContext();
 
-    // console.log("USER =>", user)
-    const user = userDetails.userDetails;
+   
+    // const user = userDetails.userDetails;
     const userName = user ? `${user.firstName} ${user.lastName}` : 'Guest';
 
     const userInitials = useInitials(userName);
@@ -46,11 +48,11 @@ export default function ChatComponent( userDetails ) {
         setIsModalOpen(false);
     };
     useEffect(() => {
-        console.log('User state updated from ChatComponent:', userDetails);
+        console.log('User state updated from ChatComponent:', user);
       }, [user]);
     useEffect(() => {
     // Create a connection to the Socket.IO server
-    const socketInstance = io('http://localhost:3333'); // Replace with your server URL
+    const socketInstance = io(`${API_BASE_URL}`); // Replace with your server URL
     setSocket(socketInstance);
     
     
@@ -65,14 +67,12 @@ export default function ChatComponent( userDetails ) {
       });
 
     socketInstance.on('systemMessage', (messages) => {
-        debugger;
-        console.log(messages)
+
         setMessages(messages);
       });
     /// Handle incoming messages from the server
     socketInstance.on('receive_message', (messages) => {
-        debugger;
-        console.log("CHAT MESSAGES",messages)
+
         setMessages(messages);
       });
       
@@ -83,11 +83,11 @@ export default function ChatComponent( userDetails ) {
   }, []);
 
     useEffect(() =>{
-        axios.get("http://localhost:3333/api/chatrooms", {withCredentials:true})
+        axios.get(`${API_BASE_URL}/api/chatrooms`, {withCredentials:true})
         .then(res => {
             setChatRooms(res.data)
             const userChatRooms = res.data.filter(room => (
-                room.users.some(userInRoom => userInRoom._id === user._id)
+                room.users.some(userInRoom => userInRoom._id === user?._id)
             ));
             
             const userRoomIds = userChatRooms.map(room => room._id);
@@ -102,7 +102,7 @@ export default function ChatComponent( userDetails ) {
     useEffect(() => {
         // Call fetchChatRoomMessages when the component mounts or when roomId changes
         if(roomId!== null && roomId !== undefined) {
-            console.log("CHECK IF I AM  TRIGGERED")
+            
             fetchChatRoomMessages(roomId);
             chatRoomUsers(roomId);
         }else{
@@ -115,16 +115,14 @@ export default function ChatComponent( userDetails ) {
 
     const fetchChatRoomMessages = async (roomId) => {
         try {
-          // Make an API request to retrieve messages for the given chat room ID
-          const response = await axios.get(`http://localhost:3333/api/chatroom/${roomId}/messages`);
+          // Make an API request to retrieve messages for the given chat room ID`${API_BASE_URL}/api/chatrooms`
+          const response = await axios.get(`${API_BASE_URL}/api/chatroom/${roomId}/messages`);
           const messages = response.data;
           setUsersInRoom(response.data?.chatRoomUsers);
-          console.log("USERS List =>" , usersInRoom)
+          
           setMessages(response.data.messages)
           setChatRoomName(response.data.chatRoomName)
-          console.log("chat room messages =>",messages)
-          // Process and display the retrieved messages in your chat interface
-          // Update the state or component to show these messages to the user
+     
         } catch (error) {
           console.error('Error fetching chat room messages:', error);
           // Handle any error that occurs during the API request
@@ -168,7 +166,7 @@ export default function ChatComponent( userDetails ) {
         }
       };
       const userInRoom = (roomId) => {
-        console.log("ACTIVE ROOM", userRooms)
+        //console.log("ACTIVE ROOM", userRooms)
         setRoomId(userRooms[0])
         return userRooms.includes(roomId);
       };
@@ -176,8 +174,10 @@ export default function ChatComponent( userDetails ) {
       const handleLeaveRoom = async (roomId) => {
         try {
           // Send a POST request to leave the chat room
-          const response = await axios.post(`http://localhost:3333/api/leave/${roomId}`, user, {
-            withCredentials: true,
+          const response = await axios.post(`${API_BASE_URL}/api/leave/${roomId}`, user, {
+            withCredentials: true,headers: {
+              Authorization: `${authToken}`,
+            },
           });
       
           if (response.status === 200) {
@@ -193,12 +193,20 @@ export default function ChatComponent( userDetails ) {
           console.error('Error leaving chat room:', error);
         }
       };
+      const getAuthTokenFromCookie = () => {
+    
+    
+        return Cookies.get("token");
+      };
+      const authToken = getAuthTokenFromCookie(); 
       const handleJoinRoom = async (roomId) => {
-        console.log("Join Clicked")
+       
         try {
           // Send a POST request to join the chat room
-          const response = await axios.post(`http://localhost:3333/api/join/${roomId}`, user, {
-            withCredentials: true, // Send cookies with the request if using cookies for authentication
+          const response = await axios.post(`${API_BASE_URL}/api/join/${roomId}`, user, {
+            withCredentials: true,  headers: {
+              Authorization: `${authToken}`,
+            },
           });
   
           if (response.status === 200) {
@@ -213,6 +221,17 @@ export default function ChatComponent( userDetails ) {
           }
         } catch (error) {
           console.error('Error joining chat room:', error);
+        }
+      };
+      const updateActiveRooms = (roomId) => {
+        if (userInRoom(roomId)) {
+          // User is already in the room, so leave it
+          handleLeaveRoom(roomId);
+          setActiveRooms((prevActiveRooms) => prevActiveRooms.filter((activeRoom) => activeRoom !== roomId));
+        } else {
+          // User is not in the room, so join it
+          handleJoinRoom(roomId);
+          setActiveRooms((prevActiveRooms) => [...prevActiveRooms, roomId]);
         }
       };
   return (
@@ -233,8 +252,9 @@ export default function ChatComponent( userDetails ) {
                     handleJoinRoom={handleJoinRoom} 
                     handleLeaveRoom={handleLeaveRoom} 
                     userInRoom={userInRoom}
-                    activeRooms={userRooms}
-                    setActiveRooms={setActiveRooms}
+                    activeRooms={activeRooms}
+                    // setActiveRooms={setActiveRooms}
+                    setActiveRooms={updateActiveRooms}
                     />
             </div>
             <div className="flex items-center justify-center">
@@ -247,9 +267,9 @@ export default function ChatComponent( userDetails ) {
             </div>
         </div>
         <div className='w-[50%] bg-white border border-gray-300 h-screen'>
-            <ChatInterface messages={messages} chatRoomName={chatRoomName} sendMessage={sendMessage} userDetails={userDetails}/>
+            <ChatInterface messages={messages} chatRoomName={chatRoomName} sendMessage={sendMessage} user={user} />
         </div>
-        <div className='w-[25%] bg-white border border-gray-300 h-screen'>
+        <div className='w-[25%] bg-white border border-gray-300 h-screen p-5'>
             <UsersList userList={usersInRoom}/>
         </div>
 

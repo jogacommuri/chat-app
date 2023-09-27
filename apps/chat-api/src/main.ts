@@ -57,8 +57,9 @@ const secret = "SECRET_1234";
 
 app.get('/api/user',(req, res)=>{
 
-  const token = req.cookies.token;
-  // console.log("decoded",token)
+  //const token = req.cookies.token;
+  const token = req.headers.authorization;
+  //console.log("decoded",token)
    
   const userInfo = jwt.verify(token, secret)
   // console.log("decoded",userInfo)
@@ -74,7 +75,7 @@ app.get('/api/user',(req, res)=>{
 
 app.post('/api/register', (req,res) =>{
   const {email, firstName, lastName} =  req.body;
-  console.log(req.body);
+  //console.log(req.body);
   const password = bcrypt.hashSync(req.body.password, 10);
 
   const user = new User({email, firstName, lastName, password});
@@ -104,15 +105,16 @@ app.post('/api/login', (req,res)=>{
       // res.json({passOk});
       if(passOk){
         jwt.sign({id:user._id}, secret, (err, token)=>{
-          const {firstName,lastName, email} = user;
+          const {firstName,lastName, email, _id} = user;
           const responseData = {
             message: "Login successful",
-            data: {firstName,lastName, email}
-            // Add any other data you want to send
+            data: {firstName,lastName, email,_id}
+           
           };
           res.cookie('token',token);
           
-          res.status(200).json(responseData)
+          res.status(200).json({_id,email, firstName, lastName});
+          //res.json({_id,email, firstName, lastName})
         })
       }else{
         res.sendStatus(422).json("Invalid Username or password");

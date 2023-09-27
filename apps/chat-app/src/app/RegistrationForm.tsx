@@ -1,7 +1,8 @@
 import React, { useState , useContext} from 'react'
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
-import UserContextProvider, { useUserContext } from './UserContextProvider';
+import UserContextProvider, { useUserContext } from './UserContext';
+import { API_BASE_URL } from './api';
 
 export default function UserRegistrationForm() {
 
@@ -84,14 +85,14 @@ export default function UserRegistrationForm() {
   const handleSubmit = async (event) =>{
     event.preventDefault();
     if(validateForm()){
-      console.log("FORM VALID DO NEXT STEPS")
+     
       
       const {firstName, lastName, email, password} = formData;
       
-      axios.post(`http://localhost:3333/api/register`, {firstName, lastName, email, password},{withCredentials:true})
+      axios.post(`${API_BASE_URL}/api/register`, {firstName, lastName, email, password},{withCredentials:true})
       .then(response=>{
-        console.log("resp =>", response);
-        console.log({firstName, lastName, email, password});
+        // console.log("resp =>", response);
+        // console.log({firstName, lastName, email, password});
         const name = `${firstName} ${lastName}`
         setUser({firstName, lastName, email,_id:''});
         navigate('/')
@@ -188,7 +189,7 @@ export default function UserRegistrationForm() {
               </div>
               <div className="relative">
                 <input 
-                    type="text" 
+                    type="password" 
                     id="password" 
                     className={`${inputClass}
                     ${errors.password ? 'text-red-500' : ''}`} 

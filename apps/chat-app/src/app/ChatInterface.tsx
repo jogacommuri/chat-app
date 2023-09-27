@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import useInitials from './hooks/useInitials';
-import UserContextProvider, { useUserContext } from './UserContextProvider';
+import UserContextProvider, { useUserContext } from './UserContext';
 
-export default function ChatInterface({ messages, chatRoomName, sendMessage , userDetails}) {
+export default function ChatInterface({ messages, chatRoomName, sendMessage, user}) {
     const [messageText, setMessageText] = useState('');
-    const user = userDetails.userDetails;
+    // const { user } = useUserContext();
     const userName = user ? `${user.firstName} ${user.lastName}` : 'Guest';
     const messageContainerRef = useRef(null);
     const messageInputRef = useRef(null);
@@ -64,7 +64,7 @@ export default function ChatInterface({ messages, chatRoomName, sendMessage , us
           }
       }, [messages]);
       useEffect(() => {
-        console.log('User state updated from ChatInterface:', userDetails);
+        console.log('User state updated from ChatInterface:', user);
       }, [user]);
     return (
         <div className="flex-1 p:2 sm:p-6 flex flex-col font-mono h-screen justify-end">
