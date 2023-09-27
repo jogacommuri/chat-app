@@ -21,6 +21,12 @@ import Message from './models/Message'
 
 
 import ChatRoomRoutes from './routes/chatRoomRoute';
+
+interface UserInfo {
+  id: string;
+  // Other properties...
+}
+
 const app = express();
 const server = http.createServer(app);
 const io:SocketIO = new SocketIO(server, {
@@ -61,7 +67,7 @@ app.get('/api/user',(req, res)=>{
   const token = req.headers.authorization;
   //console.log("decoded",token)
    
-  const userInfo = jwt.verify(token, secret)
+  const userInfo: UserInfo = jwt.verify(token, secret) as UserInfo;
   // console.log("decoded",userInfo)
     
       User.findById(userInfo.id)

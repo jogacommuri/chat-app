@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 import RoomList from './RoomList'
-import UserContextProvider, { useUserContext } from './UserContext';
+
 import useInitials from './hooks/useInitials';
 import axios from 'axios';
 import CreateChatRoom from './CreateChatRoom';
@@ -249,8 +249,7 @@ export default function ChatComponent({user} ) {
             <div className='p-5'>
                 <RoomList 
                     rooms = {chatRooms}  
-                    handleJoinRoom={handleJoinRoom} 
-                    handleLeaveRoom={handleLeaveRoom} 
+                  
                     userInRoom={userInRoom}
                     activeRooms={activeRooms}
                     // setActiveRooms={setActiveRooms}

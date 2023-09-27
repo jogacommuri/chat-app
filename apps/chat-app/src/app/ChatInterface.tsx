@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import useInitials from './hooks/useInitials';
-import UserContextProvider, { useUserContext } from './UserContext';
+
 
 export default function ChatInterface({ messages, chatRoomName, sendMessage, user}) {
     const [messageText, setMessageText] = useState('');
@@ -29,7 +29,7 @@ export default function ChatInterface({ messages, chatRoomName, sendMessage, use
 
     const handleMessageSend = (e) => {
         e.preventDefault();
-        console.log('handleMessageSend called'); // Add this line
+        
       if (messageText.trim() !== '') {
         formatMessage(messageText);
         sendMessage(messageText);

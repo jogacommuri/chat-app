@@ -1,7 +1,7 @@
 import React, { useState , useContext} from 'react'
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
-import UserContextProvider, { useUserContext } from './UserContext';
+import { useUserContext } from './UserContextProvider';
 import { API_BASE_URL } from './api';
 
 export default function UserRegistrationForm() {
