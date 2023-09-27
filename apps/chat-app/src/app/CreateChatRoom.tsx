@@ -4,7 +4,7 @@ import Modal from 'react-modal';
 import  { useUserContext } from './UserContextProvider';
 import { API_BASE_URL } from './api';
 
-export default function CreateChatRoom({ isOpen, closeModal, setChatRooms }) {
+export default function CreateChatRoom({ isOpen, closeModal, setChatRooms, handleCreateRoom }) {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -25,16 +25,7 @@ export default function CreateChatRoom({ isOpen, closeModal, setChatRooms }) {
         e.preventDefault();
         formData.users.push(user)
        
-        try {
-          const response = await axios.post(`${API_BASE_URL}/api/chatrooms`,  formData,{withCredentials:true});
-          // Handle the response here, e.g., update state or show a success message
-          
-        //   setChatRooms(response.data)
-          setChatRooms((prevChatRooms) => [...prevChatRooms, response.data]);
-        } catch (error) {
-          // Handle errors, e.g., display an error message to the user
-          console.error('Error creating chat room:', error);
-        }
+        handleCreateRoom(formData)
         closeModal();
     };
   return (
