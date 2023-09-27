@@ -1,1 +1,1 @@
-export const API_BASE_URL = 'http://localhost:3333';
+export const API_BASE_URL = 'https://chat-app-api-fxj5.onrender.com/';
